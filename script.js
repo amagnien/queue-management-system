@@ -11,16 +11,31 @@ const tabs = document.querySelectorAll('.tab');
 const waitingCustomersDiv = document.getElementById('waitingCustomers');
 const servedCustomersDiv = document.getElementById('servedCustomers');
 
-// Load data from JSON file on page load
+// Load data from Netlify function on page load
 window.onload = async () => {
-    const response = await fetch('./data/customers.json');
-    const data = await response.json();
-    waitingCustomers = data.waitingCustomers || [];
-    servedCustomers = data.servedCustomers || [];
-    ticketCounter = data.ticketCounter || 1;
+    try {
+        const response = await fetch('/.netlify/functions/customers');
+        if (!response.ok) {
+            throw new Error('Failed to fetch data');
+        }
+        const data = await response.json();
+        waitingCustomers = (data.waitingCustomers || []).map(customer => ({
+            ...customer,
+            timestamp: new Date(customer.timestamp)
+        }));
+        servedCustomers = (data.servedCustomers || []).map(customer => ({
+            ...customer,
+            timestamp: new Date(customer.timestamp),
+            servedAt: new Date(customer.servedAt)
+        }));
+        ticketCounter = data.ticketCounter || 1;
 
-    updateWaitingTable();
-    updateServedTable();
+        updateWaitingTable();
+        updateServedTable();
+    } catch (error) {
+        console.error('Error loading data:', error);
+        alert('Failed to load data. Please refresh the page and try again.');
+    }
 };
 
 newCustomerBtn.addEventListener('click', toggleNewCustomerForm);
@@ -180,18 +195,38 @@ async function clearAllCustomers() {
     alert("WARNING: All Queues will be cleared.");
 }
 
-// Save data to customers.json
+// Save data using Netlify function
 async function saveData() {
     const data = {
-        waitingCustomers,
-        servedCustomers,
+        waitingCustomers: waitingCustomers.map(customer => ({
+            ...customer,
+            timestamp: customer.timestamp.toISOString()
+        })),
+        servedCustomers: servedCustomers.map(customer => ({
+            ...customer,
+            timestamp: customer.timestamp.toISOString(),
+            servedAt: customer.servedAt.toISOString()
+        })),
         ticketCounter
     };
-    await fetch('/.netlify/functions/customers', {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    });
+
+    try {
+        const response = await fetch('/.netlify/functions/customers', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to save data');
+        }
+
+        const result = await response.json();
+        console.log(result.message);
+    } catch (error) {
+        console.error('Error saving data:', error);
+        alert('Failed to save data. Please try again.');
+    }
 }
