@@ -2,45 +2,37 @@ const fs = require('fs').promises;
 const path = require('path');
 
 exports.handler = async (event, context) => {
+  console.log('Function invoked with event:', event);
   const dataPath = path.join(__dirname, 'customers.json');
 
-  if (event.httpMethod === 'GET') {
-    try {
+  try {
+    if (event.httpMethod === 'GET') {
       const data = await fs.readFile(dataPath, 'utf8');
       return {
         statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
         body: data,
       };
-    } catch (error) {
-      if (error.code === 'ENOENT') {
-        // If the file doesn't exist, return an empty data structure
-        return {
-          statusCode: 200,
-          body: JSON.stringify({ waitingCustomers: [], servedCustomers: [], ticketCounter: 1 }),
-        };
-      }
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: 'Failed to read data' }),
-      };
-    }
-  } else if (event.httpMethod === 'PUT') {
-    try {
+    } else if (event.httpMethod === 'PUT') {
       await fs.writeFile(dataPath, event.body);
       return {
         statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: 'Data updated successfully' }),
       };
-    } catch (error) {
+    } else {
       return {
-        statusCode: 500,
-        body: JSON.stringify({ error: 'Failed to write data' }),
+        statusCode: 405,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Method not allowed' }),
       };
     }
+  } catch (error) {
+    console.error('Error in Netlify function:', error);
+    return {
+      statusCode: 500,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Internal server error', details: error.message }),
+    };
   }
-
-  return {
-    statusCode: 405,
-    body: JSON.stringify({ error: 'Method not allowed' }),
-  };
 };
