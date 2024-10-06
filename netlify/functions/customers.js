@@ -12,6 +12,13 @@ exports.handler = async (event, context) => {
         body: data,
       };
     } catch (error) {
+      if (error.code === 'ENOENT') {
+        // If the file doesn't exist, return an empty data structure
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ waitingCustomers: [], servedCustomers: [], ticketCounter: 1 }),
+        };
+      }
       return {
         statusCode: 500,
         body: JSON.stringify({ error: 'Failed to read data' }),
