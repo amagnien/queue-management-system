@@ -16,7 +16,7 @@ window.onload = async () => {
     try {
         const response = await fetch('/.netlify/functions/customers');
         if (!response.ok) {
-            throw new Error('Failed to fetch data');
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
         waitingCustomers = (data.waitingCustomers || []).map(customer => ({
@@ -34,7 +34,7 @@ window.onload = async () => {
         updateServedTable();
     } catch (error) {
         console.error('Error loading data:', error);
-        alert('Failed to load data. Please refresh the page and try again.');
+        alert('Failed to load data. Please check the console and try again.');
     }
 };
 
@@ -187,12 +187,14 @@ function generateReport() {
 
 // Clear all customers at EOD
 async function clearAllCustomers() {
-    waitingCustomers = [];
-    servedCustomers = [];
-    await saveData();
-    updateWaitingTable();
-    updateServedTable();
-    alert("WARNING: All Queues will be cleared.");
+    if (confirm("Are you sure you want to clear all queues? This action cannot be undone.")) {
+        waitingCustomers = [];
+        servedCustomers = [];
+        await saveData();
+        updateWaitingTable();
+        updateServedTable();
+        alert("All Queues have been cleared.");
+    }
 }
 
 // Save data using Netlify function
@@ -220,13 +222,14 @@ async function saveData() {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to save data');
+            const errorData = await response.json();
+            throw new Error(`Failed to save data: ${errorData.error}`);
         }
 
         const result = await response.json();
         console.log(result.message);
     } catch (error) {
         console.error('Error saving data:', error);
-        alert('Failed to save data. Please try again.');
+        alert('Failed to save data. Please check the console and try again.');
     }
 }
