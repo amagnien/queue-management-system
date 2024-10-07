@@ -14,7 +14,7 @@ const servedCustomersDiv = document.getElementById('servedCustomers');
 // Load data from Netlify function on page load
 window.onload = async () => {
     try {
-        const response = await fetch('/.netlify/functions/customers');
+        const response = await fetch('/netlify/functions/customers');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
