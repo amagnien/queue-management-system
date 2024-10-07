@@ -14,27 +14,36 @@ const servedCustomersDiv = document.getElementById('servedCustomers');
 // Load data from Netlify function on page load
 window.onload = async () => {
     try {
-        const response = await fetch('/netlify/functions/customers');
+        const response = await fetch('/.netlify/functions/customers');
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
-        waitingCustomers = (data.waitingCustomers || []).map(customer => ({
-            ...customer,
-            timestamp: new Date(customer.timestamp)
-        }));
-        servedCustomers = (data.servedCustomers || []).map(customer => ({
-            ...customer,
-            timestamp: new Date(customer.timestamp),
-            servedAt: new Date(customer.servedAt)
-        }));
-        ticketCounter = data.ticketCounter || 1;
 
-        updateWaitingTable();
-        updateServedTable();
+        // Ensure the content-type is JSON before parsing
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+            const data = await response.json();
+            
+            waitingCustomers = (data.waitingCustomers || []).map(customer => ({
+                ...customer,
+                timestamp: new Date(customer.timestamp)
+            }));
+            servedCustomers = (data.servedCustomers || []).map(customer => ({
+                ...customer,
+                timestamp: new Date(customer.timestamp),
+                servedAt: new Date(customer.servedAt)
+            }));
+            ticketCounter = data.ticketCounter || 1;
+
+            updateWaitingTable();
+            updateServedTable();
+        } else {
+            throw new Error("Received non-JSON response from the server");
+        }
     } catch (error) {
         console.error('Error loading data:', error);
-        alert('Failed to load data. Please check the console and try again.');
+        alert('Failed to load data. Please check the console for more details.');
     }
 };
 
