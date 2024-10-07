@@ -1,1 +1,30 @@
+{
+    "waitingCustomers": [
+        {
+            "ticketNumber": 1,
+            "name": "John Doe",
+            "description": "First customer in line",
+            "service": "Service A",
+            "timestamp": "2024-10-07T12:00:00Z"
+        },
+        {
+            "ticketNumber": 2,
+            "name": "Jane Smith",
+            "description": "Second customer in line",
+            "service": "Service B",
+            "timestamp": "2024-10-07T12:05:00Z"
+        }
+    ],
+    "servedCustomers": [
+        {
+            "ticketNumber": 3,
+            "name": "Mike Johnson",
+            "description": "Third customer in line",
+            "service": "Service C",
+            "timestamp": "2024-10-07T12:10:00Z",
+            "servedAt": "2024-10-07T12:15:00Z"
+        }
+    ],
+    "ticketCounter": 4
+}
 
