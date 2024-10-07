@@ -2,17 +2,19 @@ const fs = require('fs').promises;
 const path = require('path');
 
 exports.handler = async (event, context) => {
-  console.log('Function invoked with event:', event);
+  console.log('Netlify Function Invoked');
   
-  // Adjust the path to where `customers.json` is stored
+  // Use __dirname to locate the customers.json file
   const dataPath = path.join(__dirname, 'customers.json');
+  console.log('Data path:', dataPath);
   
   try {
     if (event.httpMethod === 'GET') {
-      console.log('Handling GET request...');
-      // Try reading the data file, if missing return a default empty structure
-      const data = await fs.readFile(dataPath, 'utf8').catch(() => {
-        console.log('customers.json file not found, returning default data.');
+      console.log('Handling GET request');
+      
+      // Read the customers.json file, return default data if file is missing
+      const data = await fs.readFile(dataPath, 'utf8').catch((err) => {
+        console.warn('File not found, returning default data:', err.message);
         return JSON.stringify({ waitingCustomers: [], servedCustomers: [], ticketCounter: 1 });
       });
       
@@ -23,14 +25,15 @@ exports.handler = async (event, context) => {
       };
       
     } else if (event.httpMethod === 'PUT') {
-      console.log('Handling PUT request with body:', event.body);
+      console.log('Handling PUT request');
+      console.log('Request body:', event.body);
       
-      // Check if the request body is valid JSON
+      // Check if request body is valid JSON
       let parsedBody;
       try {
         parsedBody = JSON.parse(event.body);
-      } catch (parseError) {
-        console.error('Invalid JSON in request body:', parseError);
+      } catch (err) {
+        console.error('Failed to parse request body as JSON:', err);
         return {
           statusCode: 400,
           headers: { 'Content-Type': 'application/json' },
@@ -49,7 +52,7 @@ exports.handler = async (event, context) => {
       };
       
     } else {
-      console.log('Invalid HTTP method');
+      console.warn('Invalid HTTP method:', event.httpMethod);
       return {
         statusCode: 405,
         headers: { 'Content-Type': 'application/json' },
@@ -58,7 +61,7 @@ exports.handler = async (event, context) => {
     }
     
   } catch (error) {
-    console.error('Server error in Netlify function:', error);
+    console.error('Internal server error:', error.message);
     
     return {
       statusCode: 500,
