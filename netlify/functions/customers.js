@@ -1,38 +1,49 @@
-const fs = require('fs').promises;
-const path = require('path');
+const faunadb = require('faunadb');
+const q = faunadb.query;
+
+const client = new faunadb.Client({
+  secret: process.env.FAUNADB_SECRET
+});
 
 exports.handler = async (event, context) => {
-  console.log('Function invoked with event:', event);
-  const dataPath = path.join(__dirname, 'customers.json');
-
-  try {
-    if (event.httpMethod === 'GET') {
-      const data = await fs.readFile(dataPath, 'utf8');
+  if (event.httpMethod === 'GET') {
+    try {
+      const result = await client.query(
+        q.Get(q.Ref(q.Collection('customers'), 'data'))
+      );
       return {
         statusCode: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: data,
+        body: JSON.stringify(result.data)
       };
-    } else if (event.httpMethod === 'PUT') {
-      await fs.writeFile(dataPath, event.body);
+    } catch (error) {
       return {
-        statusCode: 200,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: 'Data updated successfully' }),
-      };
-    } else {
-      return {
-        statusCode: 405,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ error: 'Method not allowed' }),
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Failed to retrieve data' })
       };
     }
-  } catch (error) {
-    console.error('Error in Netlify function:', error);
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Internal server error', details: error.message }),
-    };
+  } else if (event.httpMethod === 'PUT') {
+    try {
+      const data = JSON.parse(event.body);
+      await client.query(
+        q.Update(
+          q.Ref(q.Collection('customers'), 'data'),
+          { data: data }
+        )
+      );
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ message: 'Data updated successfully' })
+      };
+    } catch (error) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Failed to update data' })
+      };
+    }
   }
+  
+  return {
+    statusCode: 405,
+    body: JSON.stringify({ error: 'Method not allowed' })
+  };
 };
