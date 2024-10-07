@@ -4,7 +4,6 @@ const path = require('path');
 exports.handler = async (event, context) => {
   console.log('Netlify Function Invoked');
   
-  // Use __dirname to locate the customers.json file
   const dataPath = path.join(__dirname, 'customers.json');
   console.log('Data path:', dataPath);
   
@@ -12,7 +11,6 @@ exports.handler = async (event, context) => {
     if (event.httpMethod === 'GET') {
       console.log('Handling GET request');
       
-      // Read the customers.json file, return default data if file is missing
       const data = await fs.readFile(dataPath, 'utf8').catch((err) => {
         console.warn('File not found, returning default data:', err.message);
         return JSON.stringify({ waitingCustomers: [], servedCustomers: [], ticketCounter: 1 });
@@ -28,7 +26,6 @@ exports.handler = async (event, context) => {
       console.log('Handling PUT request');
       console.log('Request body:', event.body);
       
-      // Check if request body is valid JSON
       let parsedBody;
       try {
         parsedBody = JSON.parse(event.body);
@@ -41,7 +38,6 @@ exports.handler = async (event, context) => {
         };
       }
       
-      // Write the data to customers.json
       await fs.writeFile(dataPath, JSON.stringify(parsedBody));
       console.log('Data successfully written to customers.json');
       
@@ -62,7 +58,6 @@ exports.handler = async (event, context) => {
     
   } catch (error) {
     console.error('Internal server error:', error.message);
-    
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
